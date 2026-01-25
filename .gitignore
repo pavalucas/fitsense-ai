@@ -45,6 +45,7 @@ frontend/.npm/
 # Environment Variables
 .env
 .env.local
+.env.bak
 .env.development.local
 .env.test.local
 .env.production.local
