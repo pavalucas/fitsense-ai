@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import axios from "axios";
 import {
   Activity,
@@ -70,6 +70,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [syncData, setSyncData] = useState<SyncResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showLogin, setShowLogin] = useState(false);
 
   // Mock data for the chart to demonstrate visualization capabilities
   // since the current hackathon backend checkpoint returns mostly summary stats
@@ -97,18 +100,36 @@ function App() {
     }
   };
 
-  const handleSync = async () => {
+  const handleSync = async (e?: FormEvent, forceMock = false) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError(null);
+
     try {
-      // Demo user ID
-      const res = await axios.get<SyncResponse>(
-        `${API_BASE_URL}/api/garmin/sync/demo_user`,
-      );
+      let res;
+      if (email && password && !forceMock) {
+        res = await axios.post<SyncResponse>(
+          `${API_BASE_URL}/api/garmin/sync/demo_user`,
+          {
+            email,
+            password,
+            days: 7,
+          },
+        );
+      } else {
+        res = await axios.get<SyncResponse>(
+          `${API_BASE_URL}/api/garmin/sync/demo_user`,
+        );
+      }
       setSyncData(res.data);
+      setShowLogin(false);
     } catch (err) {
       console.error(err);
-      setError("Failed to sync data. Ensure backend is running.");
+      if (axios.isAxiosError(err) && err.response?.data?.detail) {
+        setError(`Sync failed: ${err.response.data.detail}`);
+      } else {
+        setError("Failed to sync data. Ensure backend is running.");
+      }
     } finally {
       setLoading(false);
     }
@@ -144,7 +165,7 @@ function App() {
               {status?.garmin_status || "Checking..."}
             </span>
             <a
-              href="https://github.com/your-team/project"
+              href="https://github.com/pavalucas/fitsense-ai"
               target="_blank"
               rel="noreferrer"
               className="text-gray-400 hover:text-white transition-colors text-sm"
@@ -167,24 +188,87 @@ function App() {
             training readiness, and sleep quality.
           </p>
 
-          <button
-            onClick={handleSync}
-            disabled={loading}
-            className={`
-              group relative inline-flex items-center justify-center px-8 py-3
-              text-base font-medium text-white bg-blue-600 rounded-full
-              hover:bg-blue-700 transition-all duration-200
-              disabled:opacity-50 disabled:cursor-not-allowed
-              shadow-lg shadow-blue-500/30
-            `}
-          >
-            {loading ? (
-              <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="h-5 w-5 mr-2 group-hover:rotate-180 transition-transform duration-500" />
-            )}
-            {loading ? "Syncing..." : "Sync Garmin Data"}
-          </button>
+          {!showLogin ? (
+            <div className="flex flex-col items-center space-y-4">
+              <button
+                onClick={() => setShowLogin(true)}
+                disabled={loading}
+                className="group relative inline-flex items-center justify-center px-8 py-3 text-base font-medium text-white bg-blue-600 rounded-full hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-5 w-5 mr-2 group-hover:rotate-180 transition-transform duration-500" />
+                )}
+                {loading ? "Syncing..." : "Connect Garmin Account"}
+              </button>
+              {!loading && (
+                <button
+                  onClick={() => handleSync(undefined, true)}
+                  className="text-sm text-gray-400 hover:text-white underline decoration-dotted cursor-pointer"
+                >
+                  Use Mock Data
+                </button>
+              )}
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSync}
+              className="max-w-md mx-auto bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-2xl"
+            >
+              <h3 className="text-xl font-bold mb-4 text-white">
+                Garmin Login
+              </h3>
+              <div className="space-y-4 text-left">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="your@email.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+                <div className="flex space-x-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowLogin(false)}
+                    className="flex-1 px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                  >
+                    {loading ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      "Sync Now"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
 
           {error && (
             <div className="mt-4 flex items-center justify-center text-red-400 space-x-2">

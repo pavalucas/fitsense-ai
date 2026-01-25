@@ -4,6 +4,7 @@ from typing import Optional
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 # Adjust import based on how the app is run (module vs script)
 try:
@@ -58,8 +59,49 @@ async def health_check():
     return {"status": "healthy"}
 
 
+class GarminAuthRequest(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/api/garmin/auth")
+async def authenticate_garmin(request: GarminAuthRequest):
+    """
+    Verify Garmin credentials.
+    """
+    try:
+        # Try to login to verify credentials
+        garmin_service.login(request.email, request.password)
+        return {"status": "success", "message": "Authentication successful"}
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+
+
+class GarminSyncRequest(BaseModel):
+    email: str
+    password: str
+    days: int = 7
+
+
+@app.post("/api/garmin/sync/{user_id}")
+async def sync_garmin_data_post(user_id: str, request: GarminSyncRequest):
+    """
+    Trigger a sync of Garmin data for a specific user using provided credentials.
+    """
+    try:
+        result = garmin_service.sync_user_data(
+            user_id=user_id,
+            email=request.email,
+            password=request.password,
+            days_back=request.days,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/garmin/sync/{user_id}")
-async def sync_garmin_data(user_id: str, days: int = 7):
+async def sync_garmin_data_get(user_id: str, days: int = 7):
     """
     Trigger a sync of Garmin data for a specific user.
     If backend is authenticated with real Garmin creds, fetches real data.

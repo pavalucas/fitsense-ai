@@ -294,11 +294,28 @@ class GarminService:
         return [{"date": start_date, "weight": 75.5, "body_fat": 15.0}]
 
     def sync_user_data(
-        self, user_id: str, access_token: str, access_secret: str, days_back: int = 30
+        self,
+        user_id: str,
+        access_token: str = "mock_token",
+        access_secret: str = "mock_secret",
+        days_back: int = 30,
+        email: Optional[str] = None,
+        password: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Complete sync operation.
         """
+        if email and password:
+            try:
+                self.login(email, password)
+            except Exception as e:
+                logger.error(f"Login failed during sync: {e}")
+                return {
+                    "user_id": user_id,
+                    "status": "error",
+                    "error": f"Login failed: {str(e)}",
+                }
+
         logger.info(f"Syncing data for user {user_id} for last {days_back} days")
 
         end_date = date.today()
@@ -327,9 +344,9 @@ class GarminService:
             "activities_count": len(activities),
             "status": "success",
             "sample_data": {
-                "latest_summary": daily_summaries[-1].dict()
+                "latest_summary": daily_summaries[-1].model_dump()
                 if daily_summaries
                 else None,
-                "latest_activity": activities[-1].dict() if activities else None,
+                "latest_activity": activities[-1].model_dump() if activities else None,
             },
         }
