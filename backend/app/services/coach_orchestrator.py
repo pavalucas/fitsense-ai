@@ -81,10 +81,10 @@ class CoachOrchestrator:
         # 1. Gather Context
         recent_summaries, recent_activities = self._fetch_recent_history(days=14)
 
-        # Prepare data for analysis
+        # Prepare data for analysis in a consistent format
         analysis_context = {
-            "recent_daily_summaries": recent_summaries,
-            "recent_activities": recent_activities,
+            "daily_summaries": recent_summaries,
+            "activities": recent_activities,
         }
 
         # 2. Analyze Recovery Status
@@ -118,7 +118,6 @@ class CoachOrchestrator:
         today = date.today()
 
         # 1. Get today's recovery metrics
-        # We fetch today's data specifically
         try:
             todays_data_obj = self.garmin_service.get_daily_summary(
                 "internal", "internal", today
@@ -133,10 +132,12 @@ class CoachOrchestrator:
             todays_data = {}
 
         # 2. Analyze Current Status
-        # We pass a simplified context for immediate analysis
-        analysis_result = self.analysis_agent.analyze_recovery_status(
-            {"today_metrics": todays_data}
-        )
+        # Pass today's data in the same format the agent expects for weekly plans
+        analysis_context = {
+            "daily_summaries": [todays_data] if todays_data else [],
+            "activities": [],
+        }
+        analysis_result = self.analysis_agent.analyze_recovery_status(analysis_context)
 
         response = {
             "date": str(today),
@@ -173,16 +174,10 @@ class CoachOrchestrator:
         # 1. Fetch History
         summaries, activities = self._fetch_recent_history(days=days_back)
 
-        combined_history = {"daily_summaries": summaries, "activities": activities}
-
         # 2. Generate Insights
-        # Since data might be large, we might pass a summary or the whole thing
-        # depending on context limits. For now, passing full lists.
-        # In production, we'd likely aggregate this before sending to LLM.
+        insights_context = {"daily_summaries": summaries, "activities": activities}
         insights_result = self.insights_agent.generate_insights(
-            historical_data=[
-                combined_history
-            ],  # passing as list of dicts as expected by agent signature generic
+            historical_data=[insights_context],
             timeframe=f"Last {days_back} days",
         )
 
