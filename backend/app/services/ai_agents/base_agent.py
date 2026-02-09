@@ -7,7 +7,14 @@ from typing import Any, Dict, Optional, Union
 
 import google.generativeai as genai
 from google.generativeai.types import HarmBlockThreshold, HarmCategory
-from opik import track
+
+try:
+    from opik import track
+except ImportError:
+    # No-op decorator if Opik is not installed
+    def track(func):
+        return func
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

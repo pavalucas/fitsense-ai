@@ -4,8 +4,7 @@ pydantic>=2.6.0
 garth>=0.4.34
 python-dotenv>=1.0.0
 requests>=2.31.0
-sqlalchemy>=2.0.0
-psycopg2-binary>=2.9.0
+
 google-generativeai
 opik
 httpx
