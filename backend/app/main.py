@@ -8,8 +8,12 @@ from pydantic import BaseModel
 
 # Adjust import based on how the app is run (module vs script)
 try:
+    from app.dependencies import get_garmin_service
+    from app.routers.coach import router as coach_router
     from app.services.garmin_service import GarminService
 except ImportError:
+    from dependencies import get_garmin_service
+    from routers.coach import router as coach_router
     from services.garmin_service import GarminService
 
 load_dotenv()
@@ -28,16 +32,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include Routers
+app.include_router(coach_router)
+
 # Initialize Garmin Service
 # We try to initialize with env vars. If not present, it will run in mock mode
 # unless login is called later.
-garmin_email = os.getenv("GARMIN_EMAIL")
-garmin_password = os.getenv("GARMIN_PASSWORD")
-garmin_display_name = os.getenv("GARMIN_DISPLAY_NAME")
-
-garmin_service = GarminService(
-    email=garmin_email, password=garmin_password, display_name=garmin_display_name
-)
+garmin_service = get_garmin_service()
 
 
 @app.get("/")

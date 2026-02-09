@@ -164,6 +164,30 @@ class GarminService:
 
     def _get_mocked_daily_summary(self, target_date: date) -> GarminData:
         logger.info(f"Fetching MOCKED daily summary for {target_date}")
+
+        # DEMO SCENARIO: Force "Red Zone" recovery for TODAY
+        if target_date == date.today():
+            return GarminData(
+                date=target_date,
+                sleep_score=55,  # Poor
+                total_sleep_minutes=360,
+                deep_sleep_minutes=40,
+                light_sleep_minutes=200,
+                rem_sleep_minutes=120,
+                awake_minutes=30,
+                body_battery=20,  # Low (ignored by agent, but consistent)
+                stress_score=75,  # High (Critical trigger)
+                resting_heart_rate=65,  # Elevated (Critical trigger)
+                hrv=30,  # Low
+                steps=4500,
+                active_minutes=10,
+                calories_burned=1800,
+                weight_kg=75.5,
+                body_fat_percentage=15.0,
+                muscle_mass_kg=60.0,
+                raw_data={"mock": "demo_scenario_red_zone", "date": str(target_date)},
+            )
+
         day_seed = target_date.day
         return GarminData(
             date=target_date,
