@@ -1,25 +1,3 @@
----
-marp: true
-theme: default
-paginate: true
-backgroundColor: #fff
-style: |
-  section {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-  h1 {
-    color: #2c3e50;
-  }
-  h2 {
-    color: #34495e;
-  }
-  .highlight {
-    color: #3498db;
-    font-weight: bold;
-  }
-
----
-
 # FitSense AI
 ### The AI Coach that knows when to push you, and when to tell you to rest.
 
