@@ -7,8 +7,11 @@ import type {
   InsightsResponse,
 } from "../types";
 
-// Use environment variable or default to localhost
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Use environment variable or default to localhost (for development)
+// On Vercel, we use relative paths as the API is proxied via vercel.json
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:8000" : "");
 
 const api = axios.create({
   baseURL: API_BASE_URL,
