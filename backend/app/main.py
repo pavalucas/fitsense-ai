@@ -2,7 +2,7 @@ import os
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -18,7 +18,22 @@ except ImportError:
 
 load_dotenv()
 
+try:
+    import opik
+except ImportError:
+    opik = None
+
 app = FastAPI(title="FitSense AI API")
+
+if opik:
+
+    @app.middleware("http")
+    async def opik_flush_middleware(request: Request, call_next):
+        response = await call_next(request)
+        # Flush Opik to ensure traces are sent before Vercel freezes the execution
+        opik.flush()
+        return response
+
 
 # CORS configuration
 # Allowing all for hackathon flexibility, refine for production
